@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"flag"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
 
-	"../src/dto"
+	"github.com/kvnwh/distributed-go/distributed/dto"
 )
 
 var name = flag.String("name", "sensor", "name of the sensor")
@@ -27,11 +30,21 @@ func main() {
 
 	signal := time.Tick(dur)
 
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+
 	for range signal {
 		calcValue()
-		reading := dto.
-			log.Printf("rading send. value: %v\n", value)
+		reading := dto.SensorMessage{
+			Name:      *name,
+			Value:     value,
+			Timestamp: time.Now(),
+		}
+
+		buf.Reset()
+		enc.Encode(reading)
 	}
+	log.Printf("reading sent. Value: %v\n", value)
 }
 
 func calcValue() {
