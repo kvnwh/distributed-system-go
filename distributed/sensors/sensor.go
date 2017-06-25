@@ -9,8 +9,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kvnwh/distributed-go/distributed/dto"
+	"github.com/kvnwh/distributed-system-go/distributed/dto"
+	"github.com/kvnwh/distributed-system-go/distributed/qutils"
+	"github.com/streadway/amqp"
 )
+
+var url = "amqp://guest:guest@localhost:5672"
 
 var name = flag.String("name", "sensor", "name of the sensor")
 var freq = flag.Uint("freq", 5, "updat frequency in the cycles/sec")
@@ -26,6 +30,12 @@ var nom = (*max-*min)/2 + *min
 func main() {
 	flag.Parse()
 
+	conn, ch := qutils.GetChannel(url)
+	defer conn.Close()
+	defer ch.Close()
+
+	dataQueue := qutils.GetQueue(*name, ch)
+
 	dur, _ := time.ParseDuration(strconv.Itoa(1000/int(*freq)) + "ms")
 
 	signal := time.Tick(dur)
@@ -40,11 +50,17 @@ func main() {
 			Value:     value,
 			Timestamp: time.Now(),
 		}
-
 		buf.Reset()
 		enc.Encode(reading)
+
+		msg := amqp.Publishing{
+			Body: buf.Bytes(),
+		}
+
+		ch.Publish("", dataQueue.Name, false, false, msg)
+		log.Printf("reading sent. Value: %v\n", value)
 	}
-	log.Printf("reading sent. Value: %v\n", value)
+
 }
 
 func calcValue() {
