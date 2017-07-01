@@ -36,6 +36,17 @@ func main() {
 
 	dataQueue := qutils.GetQueue(*name, ch)
 
+	// publish the new queue name
+	sensorQueue := qutils.GetQueue(qutils.SensorListQueue, ch)
+	msg := amqp.Publishing{Body: []byte(*name)}
+	ch.Publish(
+		"",
+		sensorQueue.Name,
+		false,
+		false,
+		msg,
+	)
+
 	dur, _ := time.ParseDuration(strconv.Itoa(1000/int(*freq)) + "ms")
 
 	signal := time.Tick(dur)
@@ -53,14 +64,15 @@ func main() {
 		buf.Reset()
 		enc.Encode(reading)
 
+		// message to be published
 		msg := amqp.Publishing{
 			Body: buf.Bytes(),
 		}
 
+		// channel publish
 		ch.Publish("", dataQueue.Name, false, false, msg)
 		log.Printf("reading sent. Value: %v\n", value)
 	}
-
 }
 
 func calcValue() {
