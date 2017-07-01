@@ -36,12 +36,10 @@ func main() {
 
 	dataQueue := qutils.GetQueue(*name, ch)
 
-	// publish the new queue name
-	sensorQueue := qutils.GetQueue(qutils.SensorListQueue, ch)
 	msg := amqp.Publishing{Body: []byte(*name)}
 	ch.Publish(
+		"amq.fanout",
 		"",
-		sensorQueue.Name,
 		false,
 		false,
 		msg,
