@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -34,17 +35,16 @@ func main() {
 	defer conn.Close()
 	defer ch.Close()
 
+	// create a new queue
 	dataQueue := qutils.GetQueue(*name, ch)
 
-	// publish the queue name to fanout exchange
-	msg := amqp.Publishing{Body: []byte(*name)}
-	ch.Publish(
-		"amq.fanout",
-		"",
-		false,
-		false,
-		msg,
-	)
+	publishQueueName(ch)
+
+	discoveryQueue := qutils.GetQueue("", ch)
+
+	ch.QueueBind(discoveryQueue.Name, "", qutils.SensorDiscoveryExchage, false, nil)
+
+	go listenForDiscoverRequests(discoveryQueue.Name, ch)
 
 	dur, _ := time.ParseDuration(strconv.Itoa(1000/int(*freq)) + "ms")
 
@@ -70,7 +70,7 @@ func main() {
 			Body: buf.Bytes(),
 		}
 
-		// channel publish
+		// publish sensor message to data queue
 		ch.Publish("", dataQueue.Name, false, false, msg)
 		log.Printf("reading sent. Value: %v\n", value)
 	}
@@ -87,4 +87,25 @@ func calcValue() {
 		minStep = -1 * *stepSize
 	}
 	value = r.Float64()*(maxStep-minStep) + minStep
+}
+
+func publishQueueName(ch *amqp.Channel) {
+	// publish the queue name to fanout exchange
+	msg := amqp.Publishing{Body: []byte(*name)}
+	ch.Publish(
+		"amq.fanout",
+		"",
+		false,
+		false,
+		msg,
+	)
+	fmt.Printf("published queue %s to fanout exchange \n", *name)
+}
+
+func listenForDiscoverRequests(name string, ch *amqp.Channel) {
+	msgs, _ := ch.Consume(name, "", true, false, false, false, nil)
+
+	for range msgs {
+		publishQueueName(ch)
+	}
 }

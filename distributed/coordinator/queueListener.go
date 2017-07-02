@@ -36,6 +36,10 @@ func (ql *QueueListener) ListenForNewSource() {
 	// msgs channel
 	msgs, _ := ql.ch.Consume(q.Name, "", true, false, false, false, nil)
 	fmt.Println("coordinator listening for incoming queue names...")
+
+	// broadcast this coordinator to discover exchange
+	ql.DiscoverSensors()
+
 	for msg := range msgs {
 		queueName := string(msg.Body)
 		fmt.Printf("detected a queue name: %s \n", queueName)
@@ -66,4 +70,13 @@ func (ql *QueueListener) AddListener(msgs <-chan amqp.Delivery) {
 
 		ql.listeners.PublishEvent("Message received_"+msg.RoutingKey, eventData)
 	}
+}
+
+// this is added because the if coordiantor is started after sensor started, there is no way to
+// let the coordinator to pick up the data from sensor
+func (ql *QueueListener) DiscoverSensors() {
+	fmt.Printf("creating %s exchange... \n", qutils.SensorDiscoveryExchage)
+	ql.ch.ExchangeDeclare(qutils.SensorDiscoveryExchage, "fanout", false, false, false, false, nil)
+
+	ql.ch.Publish(qutils.SensorDiscoveryExchage, "", false, false, amqp.Publishing{})
 }
