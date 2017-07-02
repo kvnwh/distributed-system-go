@@ -36,6 +36,7 @@ func main() {
 
 	dataQueue := qutils.GetQueue(*name, ch)
 
+	// publish the queue name to fanout exchange
 	msg := amqp.Publishing{Body: []byte(*name)}
 	ch.Publish(
 		"amq.fanout",
@@ -47,6 +48,7 @@ func main() {
 
 	dur, _ := time.ParseDuration(strconv.Itoa(1000/int(*freq)) + "ms")
 
+	// this is a chan
 	signal := time.Tick(dur)
 
 	buf := new(bytes.Buffer)
@@ -60,6 +62,7 @@ func main() {
 			Timestamp: time.Now(),
 		}
 		buf.Reset()
+		enc = gob.NewEncoder(buf)
 		enc.Encode(reading)
 
 		// message to be published

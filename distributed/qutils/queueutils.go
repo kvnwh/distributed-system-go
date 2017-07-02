@@ -26,6 +26,7 @@ func GetQueue(name string, ch *amqp.Channel) *amqp.Queue {
 		false, // nowait
 		nil,   // args
 	)
+	fmt.Printf("A new queue %s is created \n", q.Name)
 	failOnError(err, "Failed to declare queue")
 	return &q
 }
