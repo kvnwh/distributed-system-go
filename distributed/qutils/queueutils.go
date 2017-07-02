@@ -17,14 +17,14 @@ func GetChannel(url string) (*amqp.Connection, *amqp.Channel) {
 	return conn, ch
 }
 
-func GetQueue(name string, ch *amqp.Channel) *amqp.Queue {
+func GetQueue(name string, ch *amqp.Channel, autoDelete bool) *amqp.Queue {
 	q, err := ch.QueueDeclare(
 		name,
-		false, // durable
-		false, // autodelete
-		false, // exclusive
-		false, // nowait
-		nil,   // args
+		false,      // durable
+		autoDelete, // autodelete
+		false,      // exclusive
+		false,      // nowait
+		nil,        // args
 	)
 	fmt.Printf("A new queue %s is created \n", q.Name)
 	failOnError(err, "Failed to declare queue")

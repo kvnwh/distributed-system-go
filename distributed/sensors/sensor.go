@@ -36,11 +36,11 @@ func main() {
 	defer ch.Close()
 
 	// create a new queue
-	dataQueue := qutils.GetQueue(*name, ch)
+	dataQueue := qutils.GetQueue(*name, ch, false)
 
 	publishQueueName(ch)
 
-	discoveryQueue := qutils.GetQueue("", ch)
+	discoveryQueue := qutils.GetQueue("", ch, false)
 
 	ch.QueueBind(discoveryQueue.Name, "", qutils.SensorDiscoveryExchage, false, nil)
 

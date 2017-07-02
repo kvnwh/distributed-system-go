@@ -29,7 +29,7 @@ func NewQueueListener() *QueueListener {
 }
 
 func (ql *QueueListener) ListenForNewSource() {
-	q := qutils.GetQueue("", ql.ch)
+	q := qutils.GetQueue("", ql.ch, true)
 	// bind the queue to fanout exchange instead of default exchange
 	ql.ch.QueueBind(q.Name, "", "amq.fanout", false, nil)
 	fmt.Printf("coordinator %s binded to fanout exchange \n", q.Name)
