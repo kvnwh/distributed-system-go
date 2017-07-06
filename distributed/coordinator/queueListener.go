@@ -19,10 +19,10 @@ type QueueListener struct {
 	listeners *EventAggregator
 }
 
-func NewQueueListener() *QueueListener {
+func NewQueueListener(ea *EventAggregator) *QueueListener {
 	ql := QueueListener{
 		sources:   make(map[string]<-chan amqp.Delivery),
-		listeners: NewEventAggregator(),
+		listeners: ea,
 	}
 	ql.conn, ql.ch = qutils.GetChannel(url)
 	return &ql
@@ -43,6 +43,8 @@ func (ql *QueueListener) ListenForNewSource() {
 	for msg := range msgs {
 		queueName := string(msg.Body)
 		fmt.Printf("detected a queue name: %s \n", queueName)
+
+		ql.listeners.PublishEvent(qutils.DataSourceDiscovered, queueName)
 		//  the queue name is in the msg body
 		sourceChan, _ := ql.ch.Consume(queueName, "", true, false, false, false, nil)
 		fmt.Printf("start consuming incoming messages on queue %s \n", queueName)

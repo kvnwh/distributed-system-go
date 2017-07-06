@@ -6,8 +6,14 @@ import (
 	"github.com/kvnwh/distributed-system-go/distributed/coordinator"
 )
 
+var dc *coordinator.DataBaseConsumer
+
 func main() {
-	ql := coordinator.NewQueueListener()
+	ea := coordinator.NewEventAggregator()
+
+	dc = coordinator.NewDataBaseConsumer(ea)
+	ql := coordinator.NewQueueListener(ea)
+
 	go ql.ListenForNewSource()
 
 	var a string
